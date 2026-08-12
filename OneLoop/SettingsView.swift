@@ -1,0 +1,274 @@
+//
+//  SettingsView.swift
+//  OneLoop
+//
+//  Created by David Carranco on 2026-08-01.
+//
+
+import SwiftUI
+import UIKit
+
+struct SettingsView: View {
+    let store: MedicationStore
+
+    @AppStorage("useDarkMode") private var useDarkMode = false
+    @AppStorage("useSystemAppearance")
+    private var useSystemAppearance = true
+    @AppStorage("notificationsEnabled")
+    private var notificationsEnabled = false
+    @AppStorage("useLiquidGlassNavigation")
+    private var useLiquidGlassNavigation = false
+
+    @State private var notificationStatus:
+        NotificationManager.AuthorizationStatus = .notDetermined
+    @State private var showOpenSettingsHint = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                notificationsSection
+                appearanceSection
+                legalSection
+                supportSection
+                aboutSection
+
+                // Explicit spacer — Form ignores most parent bottom insets.
+                Section {
+                    FloatingMenuScrollSpacer()
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.softBackground)
+            .navigationTitle("Settings")
+            .task {
+                await refreshNotificationStatus()
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: UIApplication.willEnterForegroundNotification
+                )
+            ) { _ in
+                Task {
+                    await refreshNotificationStatus()
+                }
+            }
+        }
+    }
+
+    // MARK: - Notifications
+
+    private var notificationsSection: some View {
+        Section {
+            Toggle(
+                "Medication reminders",
+                isOn: $notificationsEnabled
+            )
+            .onChange(of: notificationsEnabled) { _, isEnabled in
+                Task {
+                    await handleNotificationsToggle(isEnabled)
+                }
+            }
+
+            if notificationStatus == .denied {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(
+                        "Notifications are turned off for OneLoop in " +
+                        "iOS Settings. Enable them to receive dose reminders."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    Button {
+                        NotificationManager.shared.openSystemSettings()
+                    } label: {
+                        Label(
+                            "Open Settings",
+                            systemImage: "gear"
+                        )
+                    }
+                }
+            } else {
+                Text(
+                    "Receive a reminder at every scheduled medication dose."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            if showOpenSettingsHint {
+                Text(
+                    "Permission was not granted. Use Open Settings to allow " +
+                    "notifications for OneLoop."
+                )
+                .font(.caption)
+                .foregroundStyle(AppTheme.warning)
+            }
+        } header: {
+            Text("Notifications")
+        }
+    }
+
+    // MARK: - Appearance
+
+    private var appearanceSection: some View {
+        Section("Appearance") {
+            Toggle(
+                "Use system appearance",
+                isOn: $useSystemAppearance
+            )
+
+            Toggle("Dark mode", isOn: $useDarkMode)
+                .disabled(useSystemAppearance)
+
+            Text(
+                useSystemAppearance
+                    ? "OneLoop follows your device appearance setting."
+                    : (
+                        useDarkMode
+                            ? "Dark mode is enabled."
+                            : "Light mode is enabled."
+                    )
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Toggle(
+                "Liquid Glass navigation",
+                isOn: $useLiquidGlassNavigation
+            )
+
+            Text(
+                useLiquidGlassNavigation
+                    ? "System Liquid Glass tab bar (iOS 26)."
+                    : "Floating capsule menu with center add button."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: - Legal
+
+    private var legalSection: some View {
+        Section {
+            NavigationLink {
+                MedicalDisclaimerDetailView()
+            } label: {
+                Label(
+                    "Medical Disclaimer",
+                    systemImage: "stethoscope"
+                )
+            }
+
+            NavigationLink {
+                PrivacyPolicyDetailView()
+            } label: {
+                Label(
+                    "Privacy Policy",
+                    systemImage: "hand.raised.fill"
+                )
+            }
+
+            Text(AppInfo.medicalDisclaimerShort)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Legal")
+        }
+    }
+
+    // MARK: - Support
+
+    private var supportSection: some View {
+        Section("Support") {
+            if let mailto = AppInfo.supportMailtoURL {
+                Link(destination: mailto) {
+                    Label(
+                        "Email Support",
+                        systemImage: "envelope.fill"
+                    )
+                }
+            }
+
+            Text(AppInfo.supportEmail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+
+            if let supportURL = AppInfo.supportURL {
+                Link(destination: supportURL) {
+                    Label(
+                        "Support Website",
+                        systemImage: "safari"
+                    )
+                }
+            }
+        }
+    }
+
+    // MARK: - About
+
+    private var aboutSection: some View {
+        Section("About") {
+            LabeledContent("App", value: AppInfo.appName)
+            LabeledContent(
+                "Version",
+                value: "\(AppInfo.marketingVersion) (\(AppInfo.buildNumber))"
+            )
+            LabeledContent(
+                "Medications",
+                value: "\(store.medications.count)"
+            )
+        }
+    }
+
+    // MARK: - Actions
+
+    private func refreshNotificationStatus() async {
+        notificationStatus = await NotificationManager.shared
+            .authorizationStatus
+
+        if notificationsEnabled,
+           notificationStatus == .denied
+        {
+            notificationsEnabled = false
+        }
+
+        if notificationStatus == .authorized {
+            showOpenSettingsHint = false
+        }
+    }
+
+    private func handleNotificationsToggle(_ isEnabled: Bool) async {
+        showOpenSettingsHint = false
+
+        if isEnabled {
+            let granted = await NotificationManager.shared
+                .requestAuthorization()
+
+            await refreshNotificationStatus()
+
+            if granted {
+                await NotificationManager.shared.rescheduleAll(
+                    for: store.medications
+                )
+            } else {
+                notificationsEnabled = false
+
+                if notificationStatus == .denied {
+                    showOpenSettingsHint = true
+                }
+            }
+        } else {
+            await NotificationManager.shared
+                .removeAllMedicationNotifications()
+        }
+    }
+}
+
+#Preview {
+    SettingsView(store: MedicationStore())
+}
