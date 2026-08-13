@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(MedicationStore.self) private var store
+    @Bindable private var cloud = SupabaseManager.shared
     @State private var selectedTab: AppTab = .today
     /// Last real tab, used so the center + action never stays selected.
     @State private var lastContentTab: AppTab = .today
@@ -26,14 +27,19 @@ struct ContentView: View {
     @AppStorage("hasAcceptedMedicalDisclaimer")
     private var hasAcceptedMedicalDisclaimer = false
 
+    /// First-launch carousel (About → Policy → Sign in).
+    @AppStorage("hasCompletedOnboarding_v3")
+    private var hasCompletedOnboarding = false
+
     var body: some View {
         Group {
-            if hasAcceptedMedicalDisclaimer {
-                mainNavigation
-            } else {
-                MedicalDisclaimerGateView(
+            if !hasCompletedOnboarding {
+                OnboardingView(
+                    hasCompletedOnboarding: $hasCompletedOnboarding,
                     hasAcceptedDisclaimer: $hasAcceptedMedicalDisclaimer
                 )
+            } else {
+                mainNavigation
             }
         }
         .sheet(isPresented: $showingAddMedication) {
@@ -47,9 +53,43 @@ struct ContentView: View {
         )
         .onAppear {
             store.resetDosesIfNeeded()
+            // Recover if UserDefaults already marked complete while UI lagged.
+            syncOnboardingWithAuthState()
+            // Liquid Glass menu is iOS 26+ only.
+            if #unavailable(iOS 26.0) {
+                useLiquidGlassNavigation = false
+            }
+        }
+        .onChange(of: cloud.isSignedIn) { _, signedIn in
+            if signedIn {
+                completeOnboardingFromAuth()
+            }
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: SupabaseManager.didAuthenticateNotification
+            )
+        ) { _ in
+            completeOnboardingFromAuth()
         }
         .onChange(of: selectedTab) { _, newTab in
             handleTabSelection(newTab)
+        }
+    }
+
+    private func completeOnboardingFromAuth() {
+        hasAcceptedMedicalDisclaimer = true
+        hasCompletedOnboarding = true
+    }
+
+    private func syncOnboardingWithAuthState() {
+        if cloud.isSignedIn {
+            completeOnboardingFromAuth()
+        }
+        // Pick up values written directly to UserDefaults by SupabaseManager.
+        if UserDefaults.standard.bool(forKey: "hasCompletedOnboarding_v3") {
+            hasCompletedOnboarding = true
+            hasAcceptedMedicalDisclaimer = true
         }
     }
 
@@ -113,7 +153,7 @@ struct ContentView: View {
             }
         }
         .tint(AppTheme.blue)
-        .tabBarMinimizeBehavior(.onScrollDown)
+        .modifier(LiquidGlassTabBarMinimizer())
     }
 
     // MARK: - Floating capsule menu (non–Liquid Glass option)
@@ -286,6 +326,17 @@ enum AppTab: Hashable {
     case add
     case history
     case settings
+}
+
+/// Applies iOS 26+ tab bar minimize only when available.
+private struct LiquidGlassTabBarMinimizer: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            content
+        }
+    }
 }
 
 #Preview {

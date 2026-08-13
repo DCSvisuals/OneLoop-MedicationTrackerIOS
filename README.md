@@ -43,6 +43,14 @@ Update support/privacy URLs and email in:
 
 - `OneLoop/AppInfo.swift`
 
+### Supabase (optional cloud sync)
+
+See **`SUPABASE_STEP5_IOS.md`** for full steps.
+
+1. Add SPM package: `https://github.com/supabase/supabase-swift` → product **Supabase**
+2. Set URL + publishable key in `OneLoop/SupabaseConfig.swift`
+3. Ensure redirect URL `oneloop://auth-callback` is allowed in Supabase Auth
+
 Register the App Group for both the app and widget targets in your Apple Developer account before shipping widgets.
 
 ## License

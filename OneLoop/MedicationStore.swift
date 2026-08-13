@@ -150,15 +150,45 @@ final class MedicationStore {
         }
     }
 
-    var nextIncompleteDose: ScheduledDose? {
+    var missedDose: ScheduledDose? {
         scheduledDoses.first {
-            $0.status == .dueNow ||
+            $0.status == .missed
+        }
+    }
+
+    var nextUpcomingDose: ScheduledDose? {
+        scheduledDoses.first {
             $0.status == .upcoming
         }
     }
 
+    /// Next dose the user still needs to act on.
+    /// Priority: due now → missed (oldest first) → upcoming.
+    var nextIncompleteDose: ScheduledDose? {
+        if let dueDose {
+            return dueDose
+        }
+
+        if let missedDose {
+            return missedDose
+        }
+
+        return nextUpcomingDose
+    }
+
     var dueMedication: Medication? {
         dueDose?.medication
+    }
+
+    /// True only when there is a schedule and every dose is taken.
+    var allDosesTakenToday: Bool {
+        totalCount > 0 && completedCount == totalCount
+    }
+
+    var missedCount: Int {
+        scheduledDoses.filter {
+            $0.status == .missed
+        }.count
     }
 
     // MARK: - Completion totals
@@ -186,6 +216,32 @@ final class MedicationStore {
     }
 
     // MARK: - Medication management
+
+    /// Replaces the local medication list (used after a cloud download).
+    func replaceAllMedications(with remote: [Medication]) {
+        medications = remote.map { medication in
+            var copy = medication
+            copy.startDate = Calendar.current.startOfDay(for: copy.startDate)
+            prepareDosesForToday(&copy)
+            return copy
+        }
+
+        sortMedications()
+        saveMedications()
+        saveLastResetDate(Calendar.current.startOfDay(for: .now))
+
+        for medication in medications {
+            recordHistorySnapshot(for: medication, on: .now)
+        }
+
+        Task {
+            for medication in medications {
+                await NotificationManager.shared.scheduleNotifications(
+                    for: medication
+                )
+            }
+        }
+    }
 
     func add(_ medication: Medication) {
         var medication = medication

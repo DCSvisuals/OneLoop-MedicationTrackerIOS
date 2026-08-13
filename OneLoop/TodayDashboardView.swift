@@ -24,13 +24,7 @@ struct TodayDashboardView: View {
                     headerSection
                     adherenceCard
 
-                    if let dueDose = store.dueDose {
-                        dueDoseCard(dueDose)
-                    } else if let nextDose = store.nextIncompleteDose {
-                        nextDoseCard(nextDose)
-                    } else {
-                        allDosesCompleteCard
-                    }
+                    heroStatusCard
 
                     scheduleSection
 
@@ -205,8 +199,14 @@ struct TodayDashboardView: View {
             return "No medications scheduled today."
         }
 
-        if store.progress >= 1 {
+        if store.allDosesTakenToday {
             return "All medications are logged for today."
+        }
+
+        if store.missedCount > 0 {
+            return "\(store.missedCount) missed dose" +
+                (store.missedCount == 1 ? "" : "s") +
+                " · \(store.completedCount) of \(store.totalCount) taken."
         }
 
         if store.completedCount == 0 {
@@ -216,6 +216,23 @@ struct TodayDashboardView: View {
         return "\(store.remainingCount) dose" +
             (store.remainingCount == 1 ? "" : "s") +
             " remaining today."
+    }
+
+    // MARK: - Hero status card
+
+    @ViewBuilder
+    private var heroStatusCard: some View {
+        if store.totalCount == 0 {
+            EmptyView()
+        } else if store.allDosesTakenToday {
+            allDosesCompleteCard
+        } else if let dueDose = store.dueDose {
+            dueDoseCard(dueDose)
+        } else if let missedDose = store.missedDose {
+            missedDoseCard(missedDose)
+        } else if let nextDose = store.nextUpcomingDose {
+            nextDoseCard(nextDose)
+        }
     }
 
     // MARK: - Main dose cards
@@ -350,6 +367,77 @@ struct TodayDashboardView: View {
                 style: .continuous
             )
             .stroke(AppTheme.cardBorder, lineWidth: 1)
+        }
+    }
+
+    private func missedDoseCard(
+        _ scheduledDose: MedicationStore.ScheduledDose
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: 16
+        ) {
+            Label(
+                store.missedCount == 1
+                    ? "DOSE MISSED"
+                    : "\(store.missedCount) DOSES MISSED",
+                systemImage: "exclamationmark.triangle.fill"
+            )
+            .font(.caption.bold())
+            .foregroundStyle(AppTheme.warning)
+
+            medicationHeader(scheduledDose)
+
+            Text(
+                "Was scheduled for " +
+                scheduledDose.scheduledTime.formatted(
+                    date: .omitted,
+                    time: .shortened
+                ) +
+                ". You can still log it as taken."
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+
+            Button {
+                store.markTaken(scheduledDose)
+            } label: {
+                Label(
+                    "Mark taken",
+                    systemImage: "checkmark"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.warning)
+
+            NavigationLink {
+                MedicationDetailView(
+                    medication: scheduledDose.medication,
+                    store: store
+                )
+            } label: {
+                Label(
+                    "View medication details",
+                    systemImage: "info.circle"
+                )
+                .font(.footnote.weight(.semibold))
+            }
+        }
+        .padding(18)
+        .background(
+            AppTheme.cardBackground,
+            in: RoundedRectangle(
+                cornerRadius: 22,
+                style: .continuous
+            )
+        )
+        .overlay {
+            RoundedRectangle(
+                cornerRadius: 22,
+                style: .continuous
+            )
+            .stroke(AppTheme.warning.opacity(0.45), lineWidth: 1)
         }
     }
 

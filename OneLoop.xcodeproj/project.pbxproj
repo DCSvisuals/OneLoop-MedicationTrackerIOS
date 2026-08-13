@@ -10,6 +10,7 @@
 		63C3145F301FBE6000F427CA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 63C3145E301FBE6000F427CA /* WidgetKit.framework */; };
 		63C31461301FBE6000F427CA /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 63C31460301FBE6000F427CA /* SwiftUI.framework */; };
 		63C3146E301FBE6100F427CA /* OneLoopWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 63C3145C301FBE6000F427CA /* OneLoopWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		63F805B1301F0001A00B0011 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 63F805B1301F0001A00B0013 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,13 @@
 			);
 			target = 63F8056E301E428A00D199A2 /* OneLoop */;
 		};
+		63F805A1301E999900D199A2 /* Exceptions for "OneLoop" folder in "OneLoop" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"App-Info.plist",
+			);
+			target = 63F8056E301E428A00D199A2 /* OneLoop */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -73,6 +81,9 @@
 		};
 		63F80571301E428A00D199A2 /* OneLoop */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				63F805A1301E999900D199A2 /* Exceptions for "OneLoop" folder in "OneLoop" target */,
+			);
 			path = OneLoop;
 			sourceTree = "<group>";
 		};
@@ -92,6 +103,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				63F805B1301F0001A00B0011 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -163,6 +175,7 @@
 			);
 			name = OneLoop;
 			packageProductDependencies = (
+				63F805B1301F0001A00B0013 /* Supabase */,
 			);
 			productName = OneLoop;
 			productReference = 63F80597301E488800D199A2 /* OneLoop.app */;
@@ -195,6 +208,9 @@
 			);
 			mainGroup = 63F80566301E428A00D199A2;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				63F805B1301F0001A00B0012 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 63F80566301E428A00D199A2;
 			projectDirPath = "";
@@ -447,6 +463,7 @@
 				DEVELOPMENT_TEAM = T3PT8TYVJ8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "OneLoop/App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = OneLoop;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
@@ -461,7 +478,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -481,7 +498,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -496,6 +513,7 @@
 				DEVELOPMENT_TEAM = T3PT8TYVJ8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "OneLoop/App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = OneLoop;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
@@ -510,7 +528,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -530,7 +548,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -566,6 +584,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		63F805B1301F0001A00B0012 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		63F805B1301F0001A00B0013 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 63F805B1301F0001A00B0012 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 63F80567301E428A00D199A2 /* Project object */;
 }

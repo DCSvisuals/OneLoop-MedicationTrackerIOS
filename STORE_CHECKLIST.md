@@ -5,16 +5,18 @@ Use this list for the remaining external steps.
 
 ## Before upload
 
-1. **Host a privacy policy** at a public HTTPS URL  
-   - Draft text is in the app (`Settings → Privacy Policy`) and `AppInfo.privacyPolicyFull`  
-   - Update `AppInfo.privacyPolicyURL` and `AppInfo.supportURL` to your real links  
-   - Update `AppInfo.supportEmail` if needed  
+1. **Public legal/support pages** (done)  
+   - Home: https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/  
+   - Privacy: https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/privacy/  
+   - Support: https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/support/  
+   - Wired in `AppInfo.swift`  
+   - Update `AppInfo.supportEmail` if `support@oneloop.app` is not your real inbox  
 
 2. **App Store Connect**
    - Create the app with bundle ID `com.davidcarranco.oneloop.medtracker`
    - Register App Group `group.com.davidcarranco.oneloop.medtracker` for app + widget
-   - Privacy Policy URL (required for listing)
-   - Support URL
+   - Privacy Policy URL: `…/privacy/`
+   - Support URL: `…/support/`
    - Screenshots (required device sizes)
    - Age rating questionnaire
    - App Privacy nutrition labels (on-device medication schedule data)

@@ -11,6 +11,8 @@ import UIKit
 struct SettingsView: View {
     let store: MedicationStore
 
+    @Bindable private var cloud = SupabaseManager.shared
+
     @AppStorage("useDarkMode") private var useDarkMode = false
     @AppStorage("useSystemAppearance")
     private var useSystemAppearance = true
@@ -26,13 +28,13 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                accountSection
                 notificationsSection
                 appearanceSection
                 legalSection
                 supportSection
                 aboutSection
 
-                // Explicit spacer — Form ignores most parent bottom insets.
                 Section {
                     FloatingMenuScrollSpacer()
                         .listRowInsets(EdgeInsets())
@@ -45,6 +47,7 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .task {
                 await refreshNotificationStatus()
+                await cloud.refreshSession()
             }
             .onReceive(
                 NotificationCenter.default.publisher(
@@ -53,9 +56,61 @@ struct SettingsView: View {
             ) { _ in
                 Task {
                     await refreshNotificationStatus()
+                    await cloud.refreshSession()
                 }
             }
         }
+    }
+
+    // MARK: - Account (subpage)
+
+    private var accountSection: some View {
+        Section {
+            NavigationLink {
+                AccountAuthView(store: store)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: cloud.isSignedIn
+                          ? "person.crop.circle.badge.checkmark"
+                          : "person.crop.circle")
+                        .font(.title2)
+                        .foregroundStyle(AppTheme.blue)
+                        .frame(width: 36)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(
+                            cloud.isSignedIn
+                                ? "Account"
+                                : "Sign in / Register"
+                        )
+                        .font(.body.weight(.medium))
+
+                        Text(accountSubtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        } header: {
+            Text("Account")
+        } footer: {
+            Text(
+                "Optional cloud backup for sync across devices. " +
+                "Data stays on this phone until you sign in and upload."
+            )
+        }
+    }
+
+    private var accountSubtitle: String {
+        if !SupabaseConfig.isConfigured {
+            return "Cloud not configured"
+        }
+        if cloud.isSignedIn {
+            return cloud.userEmail ?? "Signed in"
+        }
+        return "Email, password, or Google"
     }
 
     // MARK: - Notifications
@@ -135,18 +190,30 @@ struct SettingsView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
 
-            Toggle(
-                "Liquid Glass navigation",
-                isOn: $useLiquidGlassNavigation
-            )
+            if #available(iOS 26.0, *) {
+                Toggle(
+                    "Liquid Glass navigation",
+                    isOn: $useLiquidGlassNavigation
+                )
 
-            Text(
-                useLiquidGlassNavigation
-                    ? "System Liquid Glass tab bar (iOS 26)."
-                    : "Floating capsule menu with center add button."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
+                Text(
+                    useLiquidGlassNavigation
+                        ? "System Liquid Glass tab bar (iOS 26)."
+                        : "Floating capsule (pill) menu with center add button."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            } else {
+                Text(
+                    "Bottom menu uses the floating capsule (pill) style. " +
+                    "Liquid Glass requires iOS 26 or newer."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .onAppear {
+                    useLiquidGlassNavigation = false
+                }
+            }
         }
     }
 
@@ -170,6 +237,15 @@ struct SettingsView: View {
                     "Privacy Policy",
                     systemImage: "hand.raised.fill"
                 )
+            }
+
+            if let privacyURL = AppInfo.privacyPolicyURL {
+                Link(destination: privacyURL) {
+                    Label(
+                        "Privacy Policy (Online)",
+                        systemImage: "safari"
+                    )
+                }
             }
 
             Text(AppInfo.medicalDisclaimerShort)

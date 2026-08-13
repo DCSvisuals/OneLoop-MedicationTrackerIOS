@@ -23,15 +23,18 @@ enum AppInfo {
         string: "mailto:\(supportEmail)?subject=OneLoop%20Support"
     )
 
-    /// Hosted privacy policy URL for App Store Connect.
-    /// Until you publish one, the in-app Privacy Policy screen is available.
-    /// Replace with your real HTTPS URL when ready.
+    /// Public site (GitHub Pages).
+    static let homeURL = URL(
+        string: "https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/"
+    )
+
+    /// Hosted privacy policy URL for App Store Connect and in-app links.
     static let privacyPolicyURL = URL(
-        string: "https://oneloop.app/privacy"
+        string: "https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/privacy/"
     )
 
     static let supportURL = URL(
-        string: "https://oneloop.app/support"
+        string: "https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/support/"
     )
 
     // MARK: - Medical disclaimer
@@ -39,7 +42,7 @@ enum AppInfo {
     static let medicalDisclaimerShort =
         "OneLoop is a personal medication reminder tool. " +
         "It is not a medical device and does not provide medical advice, " +
-        "diagnosis, or treatment."
+        "diagnosis, or treatment. Optional account data may be stored with Supabase."
 
     static let medicalDisclaimerFull = """
     OneLoop is a personal organization and reminder app. It is intended only \
@@ -59,6 +62,12 @@ enum AppInfo {
     delivered or seen. You remain responsible for taking your medications as \
     prescribed.
 
+    Account and cloud backup: If you create an account or sign in (for example \
+    with email or Google), OneLoop may store your account information and any \
+    medication data you choose to upload on Supabase (a cloud database and \
+    authentication service). Cloud backup is optional. Data kept only on this \
+    device is not sent to Supabase until you sign in and upload.
+
     If you have a medical emergency, contact emergency services immediately.
     """
 
@@ -72,13 +81,22 @@ enum AppInfo {
     1. Data we store
     OneLoop stores information you enter about medications and dosing \
     schedules, including medication names, amounts, forms, reminder times, \
-    dose completion status, and related history.
+    dose completion status, and related history. If you create an account, \
+    we also store account identifiers such as your email address and \
+    authentication provider details (for example Google sign-in).
 
     2. Where data is stored
-    Medication data is stored on your device (application support storage). \
-    Widget summary data may be shared with the OneLoop widget through an \
-    App Group on the same device. Data is not uploaded to OneLoop servers \
-    because OneLoop does not operate a backend account service in this version.
+    Medication data is stored on your device (application support storage) \
+    by default. Widget summary data may be shared with the OneLoop widget \
+    through an App Group on the same device.
+
+    Optional cloud storage (Supabase): When you register or sign in and use \
+    cloud backup/sync, account and medication information you upload is \
+    stored in Supabase (hosted cloud infrastructure used for authentication \
+    and database storage). Access to cloud rows is restricted with Row Level \
+    Security so only your signed-in account can access your data. Sign-in \
+    providers you choose (such as Google) process authentication according \
+    to their own policies.
 
     3. Notifications
     If you enable medication reminders, OneLoop schedules local notifications \
@@ -90,16 +108,18 @@ enum AppInfo {
     analytics SDKs that track you across apps and websites.
 
     5. Sharing
-    We do not sell your personal information. Because medication data stays on \
-    your device in this version, it is not transmitted by OneLoop to external \
-    servers. If you use device backup (for example iCloud Backup), Apple’s \
-    backup practices may include app data according to your Apple account \
-    settings.
+    We do not sell your personal information. Cloud data is processed by \
+    Supabase (and your chosen sign-in provider, if any) only to provide the \
+    app’s account and sync features. If you use device backup (for example \
+    iCloud Backup), Apple’s backup practices may include local app data \
+    according to your Apple account settings.
 
     6. Your choices
-    You can delete medications in the app, disable notifications, or delete \
-    the app to remove local app data from the device (subject to any device \
-    backups you maintain).
+    You can use OneLoop without an account (data stays on device). You can \
+    sign out, avoid uploading, delete medications in the app, disable \
+    notifications, or delete the app to remove local app data (subject to \
+    any device backups you maintain). You may also request account-related \
+    help via the support contact below.
 
     7. Children
     OneLoop is not directed at children under 13. Do not enter another person’s \
