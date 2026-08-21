@@ -18,6 +18,7 @@ final class SupabaseManager {
     private(set) var isBusy = false
     var lastErrorMessage: String?
     var lastStatusMessage: String?
+    private var isSyncing = false
 
     var isSignedIn: Bool { session != nil }
 
@@ -407,38 +408,68 @@ final class SupabaseManager {
 
     // MARK: - Sync medications
 
-    func pushMedications(from store: MedicationStore) async {
-        guard let client, let userID else {
-            lastErrorMessage = "Sign in before syncing."
-            return
-        }
+    /// Merge cloud + local, then upload the combined list.
+    /// Local medications are never discarded. Cloud-only rows are added.
+    func syncMedications(with store: MedicationStore) async {
+        guard client != nil, userID != nil else { return }
+        guard !isSyncing else { return }
 
+        isSyncing = true
         isBusy = true
         lastErrorMessage = nil
-        lastStatusMessage = nil
-        defer { isBusy = false }
+        defer {
+            isBusy = false
+            isSyncing = false
+        }
 
         do {
-            let rows = store.medications.map {
-                MedicationRemoteRow(medication: $0, userID: userID)
-            }
+            let remote = try await fetchRemoteMedications()
+            store.mergeIncomingMedications(remote)
+            try await upsertMedications(store.medications)
 
-            try await client
-                .from("medications")
-                .upsert(rows, onConflict: "id")
-                .execute()
-
+            let count = store.medications.count
             lastStatusMessage =
-                "Uploaded \(rows.count) medication" +
-                (rows.count == 1 ? "" : "s") +
-                " to the cloud."
+                "Synced \(count) medication" +
+                (count == 1 ? "" : "s") +
+                " with your account."
         } catch {
             lastErrorMessage = error.localizedDescription
         }
     }
 
+    func pushMedications(from store: MedicationStore, quiet: Bool = false) async {
+        // No-op when signed out — local JSON save still happens in MedicationStore.
+        guard client != nil, userID != nil else {
+            if !quiet {
+                lastErrorMessage = "Sign in before syncing."
+            }
+            return
+        }
+
+        if !quiet {
+            isBusy = true
+            lastStatusMessage = nil
+        }
+        lastErrorMessage = nil
+        defer { if !quiet { isBusy = false } }
+
+        do {
+            try await upsertMedications(store.medications)
+            if !quiet {
+                lastStatusMessage =
+                    "Uploaded \(store.medications.count) medication" +
+                    (store.medications.count == 1 ? "" : "s") +
+                    " to the cloud."
+            }
+        } catch {
+            // Always surface errors (including quiet auto-sync) so Account can show them.
+            lastErrorMessage = error.localizedDescription
+            print("Cloud medication upload failed: \(error.localizedDescription)")
+        }
+    }
+
     func pullMedications(into store: MedicationStore) async {
-        guard let client, userID != nil else {
+        guard client != nil, userID != nil else {
             lastErrorMessage = "Sign in before syncing."
             return
         }
@@ -449,13 +480,7 @@ final class SupabaseManager {
         defer { isBusy = false }
 
         do {
-            let rows: [MedicationRemoteRow] = try await client
-                .from("medications")
-                .select()
-                .execute()
-                .value
-
-            let remoteMeds = rows.map { $0.asMedication() }
+            let remoteMeds = try await fetchRemoteMedications()
             store.replaceAllMedications(with: remoteMeds)
 
             lastStatusMessage =
@@ -465,6 +490,47 @@ final class SupabaseManager {
         } catch {
             lastErrorMessage = error.localizedDescription
         }
+    }
+
+    func deleteRemoteMedication(id: UUID) async {
+        guard let client, let userID else { return }
+
+        do {
+            try await client
+                .from("medications")
+                .delete()
+                .eq("id", value: id)
+                .eq("user_id", value: userID)
+                .execute()
+        } catch {
+            print("Could not delete cloud medication: \(error.localizedDescription)")
+        }
+    }
+
+    private func fetchRemoteMedications() async throws -> [Medication] {
+        guard let client else { return [] }
+
+        let rows: [MedicationRemoteRow] = try await client
+            .from("medications")
+            .select()
+            .execute()
+            .value
+
+        return rows.map { $0.asMedication() }
+    }
+
+    private func upsertMedications(_ medications: [Medication]) async throws {
+        guard let client, let userID else { return }
+        guard !medications.isEmpty else { return }
+
+        let rows = medications.map {
+            MedicationRemoteRow(medication: $0, userID: userID)
+        }
+
+        try await client
+            .from("medications")
+            .upsert(rows, onConflict: "id")
+            .execute()
     }
 }
 
@@ -493,8 +559,9 @@ struct MedicationRemoteRow: Codable, Sendable {
         dayFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         dayFormatter.dateFormat = "yyyy-MM-dd"
 
+        // Prefer non-fractional ISO8601 — more compatible with Postgres timestamptz.
         let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        iso.formatOptions = [.withInternetDateTime]
 
         id = medication.id
         user_id = userID

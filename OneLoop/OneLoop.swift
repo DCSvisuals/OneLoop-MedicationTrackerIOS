@@ -28,6 +28,11 @@ struct OneLoopApp: App {
                             hasAcceptedDisclaimer = true
                             hasCompletedOnboarding = true
                         }
+                        if SupabaseManager.shared.isSignedIn {
+                            await SupabaseManager.shared.syncMedications(
+                                with: medicationStore
+                            )
+                        }
                     }
                 }
                 .onReceive(
@@ -37,9 +42,21 @@ struct OneLoopApp: App {
                 ) { _ in
                     hasAcceptedDisclaimer = true
                     hasCompletedOnboarding = true
+                    Task {
+                        if SupabaseManager.shared.isSignedIn {
+                            await SupabaseManager.shared.syncMedications(
+                                with: medicationStore
+                            )
+                        }
+                    }
                 }
                 .task {
                     await SupabaseManager.shared.refreshSession()
+                    if SupabaseManager.shared.isSignedIn {
+                        await SupabaseManager.shared.syncMedications(
+                            with: medicationStore
+                        )
+                    }
                 }
         }
     }

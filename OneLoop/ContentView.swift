@@ -65,6 +65,10 @@ struct ContentView: View {
                 completeOnboardingFromAuth()
             }
         }
+        .task(id: cloud.isSignedIn) {
+            guard cloud.isSignedIn else { return }
+            await cloud.syncMedications(with: store)
+        }
         .onReceive(
             NotificationCenter.default.publisher(
                 for: SupabaseManager.didAuthenticateNotification

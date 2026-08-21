@@ -40,6 +40,9 @@ struct AccountAuthView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await cloud.refreshSession()
+            if cloud.isSignedIn {
+                await cloud.syncMedications(with: store)
+            }
         }
         .confirmationDialog(
             "Sign out?",
@@ -111,7 +114,7 @@ struct AccountAuthView: View {
             }
 
             Text(
-                "Your medications can be backed up to the cloud. " +
+                "Medications on this device sync to your account automatically. " +
                 "Only your account can access them."
             )
             .font(.caption)
@@ -163,7 +166,8 @@ struct AccountAuthView: View {
             .disabled(cloud.isBusy)
 
             Text(
-                "Upload sends this device’s medications to your account. " +
+                "Medications sync automatically when you sign in. " +
+                "Upload and download are still available if you need to force a copy. " +
                 "Download replaces local medications with the cloud copy."
             )
             .font(.caption)

@@ -20,11 +20,11 @@ struct MedicationHistoryView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         pageHeader
 
-                        if store.historyDayGroups.isEmpty {
+                        if store.sortedHistoryEntries.isEmpty {
                             emptyHistoryCard
                         } else {
-                            ForEach(store.historyDayGroups) { group in
-                                daySection(group)
+                            ForEach(store.sortedHistoryEntries) { entry in
+                                historyEntryCard(entry)
                             }
                         }
 
@@ -40,9 +40,6 @@ struct MedicationHistoryView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .onAppear {
-                store.resetDosesIfNeeded()
-            }
         }
     }
 
@@ -67,7 +64,7 @@ struct MedicationHistoryView: View {
                     .foregroundStyle(AppTheme.navy)
 
                 Text(
-                    "Saved schedule records, even after a medication is removed."
+                    "Saved medication details — kept even after you remove them from your schedule."
                 )
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.mutedText)
@@ -91,50 +88,12 @@ struct MedicationHistoryView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Day sections
-
-    private func daySection(
-        _ group: MedicationHistoryDayGroup
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(dayTitle(for: group.day))
-                .font(.caption.weight(.bold))
-                .tracking(1)
-                .foregroundStyle(AppTheme.mutedText)
-
-            ForEach(group.entries) { entry in
-                historyEntryCard(entry)
-            }
-        }
-    }
-
-    private func dayTitle(for day: Date) -> String {
-        let calendar = Calendar.current
-
-        if calendar.isDateInToday(day) {
-            return "TODAY"
-        }
-
-        if calendar.isDateInYesterday(day) {
-            return "YESTERDAY"
-        }
-
-        return day.formatted(
-            .dateTime
-                .weekday(.wide)
-                .month(.abbreviated)
-                .day()
-                .year()
-        )
-        .uppercased()
-    }
-
     // MARK: - Entry cards
 
     private func historyEntryCard(
         _ entry: MedicationHistoryEntry
     ) -> some View {
-        return VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: entry.iconName)
                     .font(.title3.weight(.semibold))
@@ -152,8 +111,8 @@ struct MedicationHistoryView: View {
 
                     Text(
                         "\(entry.dosage) • " +
-                        "\(entry.totalCount) " +
-                        "\(entry.totalCount == 1 ? "dose" : "doses") scheduled"
+                        "\(entry.dosesPerDay) " +
+                        "\(entry.dosesPerDay == 1 ? "dose" : "doses") / day"
                     )
                     .font(.caption)
                     .foregroundStyle(AppTheme.mutedText)
@@ -169,33 +128,34 @@ struct MedicationHistoryView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(entry.doses) { dose in
-                    HStack(spacing: 10) {
-                        Image(systemName: doseStatusIcon(dose.status))
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(doseStatusColor(dose.status))
-                            .frame(width: 16)
+                infoRow(
+                    title: "Started",
+                    value: entry.startDate.formatted(
+                        date: .abbreviated,
+                        time: .omitted
+                    )
+                )
+                infoRow(
+                    title: "Interval",
+                    value: "Every \(entry.intervalHours) hours"
+                )
+                infoRow(
+                    title: "First dose",
+                    value: entry.firstDoseTime.formatted(
+                        date: .omitted,
+                        time: .shortened
+                    )
+                )
 
-                        Text("Dose \(dose.doseNumber)")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(AppTheme.navy)
-
-                        Spacer()
-
-                        Text(
-                            dose.scheduledTime.formatted(
-                                date: .omitted,
-                                time: .shortened
-                            )
-                        )
-                        .font(.caption)
-                        .foregroundStyle(AppTheme.mutedText)
-
-                        Text(dose.status.rawValue)
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(doseStatusColor(dose.status))
-                            .frame(width: 64, alignment: .trailing)
-                    }
+                if !entry.scheduledTimes.isEmpty {
+                    infoRow(
+                        title: "Times",
+                        value: entry.scheduledTimes
+                            .map {
+                                $0.formatted(date: .omitted, time: .shortened)
+                            }
+                            .joined(separator: ", ")
+                    )
                 }
             }
 
@@ -212,33 +172,21 @@ struct MedicationHistoryView: View {
             RoundedRectangle(cornerRadius: 20)
                 .stroke(AppTheme.cardBorder, lineWidth: 1)
         }
+        .opacity(entry.wasRemovedFromSchedule ? 0.85 : 1)
     }
 
-    private func doseStatusIcon(
-        _ status: Medication.Status
-    ) -> String {
-        switch status {
-        case .taken:
-            return "checkmark.circle.fill"
-        case .missed:
-            return "exclamationmark.circle.fill"
-        case .dueNow:
-            return "bell.fill"
-        case .upcoming:
-            return "clock.fill"
-        }
-    }
+    private func infoRow(title: String, value: String) -> some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(AppTheme.mutedText)
+                .frame(width: 72, alignment: .leading)
 
-    private func doseStatusColor(
-        _ status: Medication.Status
-    ) -> Color {
-        switch status {
-        case .taken:
-            return AppTheme.success
-        case .missed, .dueNow:
-            return AppTheme.warning
-        case .upcoming:
-            return AppTheme.blue
+            Text(value)
+                .font(.caption)
+                .foregroundStyle(AppTheme.navy)
+
+            Spacer(minLength: 0)
         }
     }
 
@@ -255,9 +203,8 @@ struct MedicationHistoryView: View {
                 .foregroundStyle(AppTheme.navy)
 
             Text(
-                "When you add medications or log doses, " +
-                "their schedule details are saved here — " +
-                "even if you later remove them."
+                "When you add a medication, its details are saved here. " +
+                "Removing it from your schedule keeps the History record."
             )
             .font(.subheadline)
             .foregroundStyle(AppTheme.mutedText)

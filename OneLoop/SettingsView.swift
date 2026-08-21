@@ -97,8 +97,8 @@ struct SettingsView: View {
             Text("Account")
         } footer: {
             Text(
-                "Optional cloud backup for sync across devices. " +
-                "Data stays on this phone until you sign in and upload."
+                "Optional cloud backup. After you sign in, medications " +
+                "sync automatically across your devices."
             )
         }
     }

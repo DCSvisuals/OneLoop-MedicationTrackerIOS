@@ -23,12 +23,14 @@ final class MedicationStore {
     }
 
     var medications: [Medication] = []
-    /// Persisted schedule snapshots. Independent of the live medication list.
+    /// Medication info catalog. Independent of the live schedule list —
+    /// entries remain after a medication is removed. No taken/missed logging.
     var historyEntries: [MedicationHistoryEntry] = []
 
     private let fileManager = FileManager.default
     private let fileName = "medications.json"
-    private let historyFileName = "medicationHistory.json"
+    /// New catalog format (old per-day taken/missed history is not migrated).
+    private let historyFileName = "medicationInfoHistory.json"
     private let resetDateFileName = "lastDoseResetDate.txt"
 
     /// Grace period after a scheduled time before a dose is considered missed.
@@ -42,33 +44,15 @@ final class MedicationStore {
 
     // MARK: - History
 
-    /// History grouped by day, newest first.
-    var historyDayGroups: [MedicationHistoryDayGroup] {
-        let calendar = Calendar.current
-
-        let grouped = Dictionary(grouping: historyEntries) { entry in
-            calendar.startOfDay(for: entry.day)
-        }
-
-        return grouped
-            .map { day, entries in
-                MedicationHistoryDayGroup(
-                    day: day,
-                    entries: entries.sorted {
-                        if $0.name.localizedCaseInsensitiveCompare($1.name)
-                            != .orderedSame
-                        {
-                            return $0.name.localizedCaseInsensitiveCompare(
-                                $1.name
-                            ) == .orderedAscending
-                        }
-
-                        return $0.medicationID.uuidString <
-                            $1.medicationID.uuidString
-                    }
-                )
+    /// History list: most recently recorded first.
+    var sortedHistoryEntries: [MedicationHistoryEntry] {
+        historyEntries.sorted {
+            if $0.recordedAt != $1.recordedAt {
+                return $0.recordedAt > $1.recordedAt
             }
-            .sorted { $0.day > $1.day }
+            return $0.name.localizedCaseInsensitiveCompare($1.name)
+                == .orderedAscending
+        }
     }
 
     // MARK: - Today
@@ -231,11 +215,37 @@ final class MedicationStore {
         saveLastResetDate(Calendar.current.startOfDay(for: .now))
 
         for medication in medications {
-            recordHistorySnapshot(for: medication, on: .now)
+            recordMedicationInHistory(medication)
         }
 
         Task {
             for medication in medications {
+                await NotificationManager.shared.scheduleNotifications(
+                    for: medication
+                )
+            }
+        }
+    }
+
+    /// Adds cloud medications that are not already on this device.
+    /// Existing local rows (and today's taken/snooze state) are left as-is.
+    func mergeIncomingMedications(_ remote: [Medication]) {
+        let localIDs = Set(medications.map(\.id))
+        let newcomers = remote.filter { !localIDs.contains($0.id) }
+        guard !newcomers.isEmpty else { return }
+
+        for var medication in newcomers {
+            medication.startDate = Calendar.current.startOfDay(for: medication.startDate)
+            prepareDosesForToday(&medication)
+            medications.append(medication)
+            recordMedicationInHistory(medication)
+        }
+
+        sortMedications()
+        saveMedications()
+
+        Task {
+            for medication in newcomers {
                 await NotificationManager.shared.scheduleNotifications(
                     for: medication
                 )
@@ -257,13 +267,15 @@ final class MedicationStore {
         sortMedications()
         saveMedications()
 
-        // Capture today's schedule snapshot as soon as the medication is added.
-        recordHistorySnapshot(for: medication, on: .now)
+        // Save medication info to History (not dose completion).
+        recordMedicationInHistory(medication)
 
         Task {
             await NotificationManager.shared.scheduleNotifications(
                 for: medication
             )
+            // Auto-upload to cloud when signed in.
+            await SupabaseManager.shared.pushMedications(from: self, quiet: true)
         }
     }
 
@@ -292,7 +304,7 @@ final class MedicationStore {
         sortMedications()
         saveMedications()
 
-        recordHistorySnapshot(for: medication, on: .now)
+        recordMedicationInHistory(medication)
 
         Task {
             await NotificationManager.shared.removeNotifications(
@@ -302,16 +314,13 @@ final class MedicationStore {
             await NotificationManager.shared.scheduleNotifications(
                 for: medication
             )
+            await SupabaseManager.shared.pushMedications(from: self, quiet: true)
         }
     }
 
     func remove(_ medication: Medication) {
-        // Snapshot today's schedule for this medication before deleting it.
-        recordHistorySnapshot(
-            for: medication,
-            on: .now,
-            markRemoved: true
-        )
+        // Keep History — mark removed, do not delete the history entry.
+        recordMedicationInHistory(medication, markRemoved: true)
 
         medications.removeAll {
             $0.id == medication.id
@@ -323,6 +332,7 @@ final class MedicationStore {
             await NotificationManager.shared.removeNotifications(
                 for: medication
             )
+            await SupabaseManager.shared.deleteRemoteMedication(id: medication.id)
         }
     }
 
@@ -342,11 +352,6 @@ final class MedicationStore {
 
         medications[index].markDoseTaken(doseNumber)
         saveMedications()
-
-        recordHistorySnapshot(
-            for: medications[index],
-            on: .now
-        )
     }
 
     func markTaken(_ dose: ScheduledDose) {
@@ -390,11 +395,6 @@ final class MedicationStore {
         medications[index].status = .upcoming
 
         saveMedications()
-
-        recordHistorySnapshot(
-            for: medications[index],
-            on: .now
-        )
     }
 
     func updateDoseStatus(
@@ -416,11 +416,6 @@ final class MedicationStore {
         )
 
         saveMedications()
-
-        recordHistorySnapshot(
-            for: medications[index],
-            on: .now
-        )
     }
 
     func snooze(
@@ -486,15 +481,9 @@ final class MedicationStore {
             lastReset,
             inSameDayAs: today
         ) else {
-            // Keep today's history entry in sync with live schedule state.
-            syncTodayHistoryIfNeeded(now: now)
             return
         }
 
-        archiveHistoryThrough(
-            endDayExclusive: today,
-            lastTrackedDay: lastReset
-        )
         rebuildForNewDay(today)
     }
 
@@ -518,234 +507,80 @@ final class MedicationStore {
         }
     }
 
-    // MARK: - History recording
+    // MARK: - History recording (medication info only)
 
-    /// Writes (or updates) a full schedule snapshot for one medication on a day.
-    private func recordHistorySnapshot(
-        for medication: Medication,
-        on date: Date,
+    /// Upserts one History card per medication with schedule info.
+    /// Does not record taken / missed / daily completion.
+    private func recordMedicationInHistory(
+        _ medication: Medication,
         markRemoved: Bool = false,
-        finalizeMissed: Bool = false,
         now: Date = .now
     ) {
-        let calendar = Calendar.current
-        let day = calendar.startOfDay(for: date)
-
-        guard medication.isActive(on: day) else {
-            return
-        }
-
-        let doseCount = medication.dosesPerDay(on: day)
-        guard doseCount > 0 else {
-            return
-        }
-
+        let day = Calendar.current.startOfDay(for: now)
+        let doseCount = max(1, medication.dosesPerDay(on: day))
         let interval = medication.intervalHours(on: day)
-        let isToday = calendar.isDate(day, inSameDayAs: now)
-
-        let doses: [MedicationHistoryDose] = (0..<doseCount).map { index in
-            let doseNumber = index + 1
-            let scheduledTime = medication.doseTime(
+        let times = (0..<doseCount).map { index in
+            medication.doseTime(
                 for: index,
                 on: day,
                 intervalHours: interval
-            )
-
-            let savedDose = medication.doses.first {
-                $0.number == doseNumber
-            }
-
-            let status: Medication.Status
-
-            if isToday && !finalizeMissed {
-                status = resolvedStatus(
-                    savedStatus: savedDose?.status ?? .upcoming,
-                    scheduledTime: scheduledTime,
-                    snoozedUntil: savedDose?.snoozedUntil,
-                    now: now
-                )
-            } else if savedDose?.status == .taken {
-                status = .taken
-            } else if finalizeMissed || day < calendar.startOfDay(for: now) {
-                status = scheduledTime <= now ? .missed : .upcoming
-            } else {
-                status = savedDose?.status ?? .upcoming
-            }
-
-            return MedicationHistoryDose(
-                doseNumber: doseNumber,
-                scheduledTime: scheduledTime,
-                status: status,
-                recordedAt: status == .taken ? now : nil
             )
         }
 
         let entry = MedicationHistoryEntry(
             medicationID: medication.id,
-            day: day,
             name: medication.name,
             dosage: medication.dosage,
             form: medication.form,
             instructions: medication.instructions,
-            doses: doses,
-            wasRemovedFromSchedule: markRemoved
+            startDate: medication.startDate,
+            dosesPerDay: doseCount,
+            intervalHours: interval,
+            firstDoseTime: medication.firstDoseTime,
+            scheduledTimes: times,
+            wasRemovedFromSchedule: markRemoved,
+            recordedAt: now
         )
 
         upsertHistoryEntry(entry)
-    }
-
-    /// Archives history for every day from `lastTrackedDay` up to (not including) `endDayExclusive`.
-    private func archiveHistoryThrough(
-        endDayExclusive: Date,
-        lastTrackedDay: Date
-    ) {
-        let calendar = Calendar.current
-        var day = calendar.startOfDay(for: lastTrackedDay)
-        let end = calendar.startOfDay(for: endDayExclusive)
-
-        while day < end {
-            let isLastTrackedDay = calendar.isDate(
-                day,
-                inSameDayAs: lastTrackedDay
-            )
-
-            for medication in medications {
-                // Live dose statuses only reflect the most recent tracked day.
-                // Gap days are reconstructed from the schedule definition.
-                if isLastTrackedDay {
-                    recordHistorySnapshot(
-                        for: medication,
-                        on: day,
-                        finalizeMissed: true
-                    )
-                } else {
-                    recordHistorySnapshotFromScheduleOnly(
-                        for: medication,
-                        on: day
-                    )
-                }
-            }
-
-            guard let next = calendar.date(
-                byAdding: .day,
-                value: 1,
-                to: day
-            ) else {
-                break
-            }
-
-            day = next
-        }
-    }
-
-    /// Builds a history entry when we no longer have live dose statuses for that day.
-    private func recordHistorySnapshotFromScheduleOnly(
-        for medication: Medication,
-        on date: Date
-    ) {
-        let calendar = Calendar.current
-        let day = calendar.startOfDay(for: date)
-
-        guard medication.isActive(on: day) else {
-            return
-        }
-
-        let doseCount = medication.dosesPerDay(on: day)
-        guard doseCount > 0 else {
-            return
-        }
-
-        let interval = medication.intervalHours(on: day)
-        let existing = historyEntries.first {
-            $0.medicationID == medication.id &&
-            calendar.isDate($0.day, inSameDayAs: day)
-        }
-
-        // Prefer any already-recorded taken statuses from that day.
-        let doses: [MedicationHistoryDose] = (0..<doseCount).map { index in
-            let doseNumber = index + 1
-            let scheduledTime = medication.doseTime(
-                for: index,
-                on: day,
-                intervalHours: interval
-            )
-
-            if let existingDose = existing?.doses.first(
-                where: { $0.doseNumber == doseNumber }
-            ), existingDose.status == .taken {
-                return existingDose
-            }
-
-            return MedicationHistoryDose(
-                doseNumber: doseNumber,
-                scheduledTime: scheduledTime,
-                status: .missed
-            )
-        }
-
-        let entry = MedicationHistoryEntry(
-            medicationID: medication.id,
-            day: day,
-            name: medication.name,
-            dosage: medication.dosage,
-            form: medication.form,
-            instructions: medication.instructions,
-            doses: doses
-        )
-
-        upsertHistoryEntry(entry)
-    }
-
-    private func syncTodayHistoryIfNeeded(now: Date = .now) {
-        // Only create / refresh today's entries for medications that already
-        // have history for today or have at least one taken dose.
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: now)
-
-        for medication in medications {
-            let hasTakenDose = medication.doses.contains {
-                $0.status == .taken
-            }
-
-            let hasTodayEntry = historyEntries.contains {
-                $0.medicationID == medication.id &&
-                calendar.isDate($0.day, inSameDayAs: today)
-            }
-
-            if hasTakenDose || hasTodayEntry {
-                recordHistorySnapshot(for: medication, on: today, now: now)
-            }
-        }
     }
 
     private func upsertHistoryEntry(_ entry: MedicationHistoryEntry) {
         if let index = historyEntries.firstIndex(
             where: { $0.storageKey == entry.storageKey }
         ) {
-            var merged = entry
-            // Keep the original entry id so SwiftUI identity stays stable.
-            merged = MedicationHistoryEntry(
+            // Keep stable SwiftUI identity; preserve removed flag once set
+            // unless the medication is actively back on the schedule.
+            let previouslyRemoved = historyEntries[index].wasRemovedFromSchedule
+            let removedFlag = entry.wasRemovedFromSchedule
+                ? true
+                : (previouslyRemoved && !medications.contains {
+                    $0.id == entry.medicationID
+                })
+
+            historyEntries[index] = MedicationHistoryEntry(
                 id: historyEntries[index].id,
                 medicationID: entry.medicationID,
-                day: entry.day,
                 name: entry.name,
                 dosage: entry.dosage,
                 form: entry.form,
                 instructions: entry.instructions,
-                doses: entry.doses,
-                wasRemovedFromSchedule: entry.wasRemovedFromSchedule
-                    || historyEntries[index].wasRemovedFromSchedule
+                startDate: entry.startDate,
+                dosesPerDay: entry.dosesPerDay,
+                intervalHours: entry.intervalHours,
+                firstDoseTime: entry.firstDoseTime,
+                scheduledTimes: entry.scheduledTimes,
+                wasRemovedFromSchedule: removedFlag,
+                recordedAt: entry.recordedAt
             )
-            historyEntries[index] = merged
         } else {
             historyEntries.append(entry)
         }
 
         historyEntries.sort {
-            if $0.day != $1.day {
-                return $0.day > $1.day
+            if $0.recordedAt != $1.recordedAt {
+                return $0.recordedAt > $1.recordedAt
             }
-
             return $0.name.localizedCaseInsensitiveCompare($1.name)
                 == .orderedAscending
         }
