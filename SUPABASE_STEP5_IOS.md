@@ -5,7 +5,7 @@ These are the **Xcode / app** steps.
 
 ## A. Add the Supabase Swift package
 
-1. Open `OneLoop.xcodeproj` in Xcode  
+1. Open `OneLoopUIv2.xcodeproj` in Xcode  
 2. **File → Add Package Dependencies…**  
 3. URL:
    ```text

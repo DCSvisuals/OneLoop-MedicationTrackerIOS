@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Opening OneLoop…</title>
+  <title>Opening OneLoop UIv2…</title>
   <style>
     body {
       margin: 0;
@@ -24,7 +24,7 @@
       // Supabase may return tokens in the query (PKCE) or hash (implicit).
       var search = window.location.search || "";
       var hash = window.location.hash || "";
-      var target = "oneloop://auth-callback" + search + hash;
+      var target = "oneloopuiv2://auth-callback" + search + hash;
 
       // Hand off to the iOS app. ASWebAuthenticationSession will capture this
       // custom scheme and close the in-app browser.
@@ -43,10 +43,10 @@
 </head>
 <body>
   <div>
-    <h1>Opening OneLoop…</h1>
+    <h1>Opening OneLoop UIv2…</h1>
     <p class="muted">Finishing sign-in and returning to the app.</p>
     <p id="fallback" style="display:none">
-      <a id="open-link">Tap here if OneLoop doesn’t open</a>
+      <a id="open-link">Tap here if OneLoop UIv2 doesn’t open</a>
     </p>
   </div>
 </body>
