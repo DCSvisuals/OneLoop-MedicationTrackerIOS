@@ -26,9 +26,8 @@ UI/UX is the current scope. Cloud/database work comes later. Use this against
 ## Before upload
 
 1. **Public legal/support pages**  
-   - Home: https://dcsvisuals.github.io/OneLoop/home/  
-   - Privacy: `…/privacy/`  
-   - Support: `…/support/`  
+   - Home / Support: https://dcsvisuals.github.io/OneLoop/home/  
+   - Privacy: https://dcsvisuals.github.io/OneLoop/PrivacyPolicy/  
    - Wired in `AppInfo.swift`  
    - Use a real inbox in `AppInfo.supportEmail` if `support@oneloop.app` is not yours  
 
