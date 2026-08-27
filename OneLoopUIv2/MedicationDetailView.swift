@@ -68,7 +68,7 @@ struct MedicationDetailView: View {
             } message: {
                 Text(
                     "This removes the medication and its reminder " +
-                    "schedule from OneLoop UIv2."
+                    "schedule from OneLoop."
                 )
             }
         }

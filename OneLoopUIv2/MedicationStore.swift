@@ -913,7 +913,7 @@ final class MedicationStore {
                     ? "No medications"
                     : "All medications taken",
                 dosage: medications.isEmpty
-                    ? "Add a medication in OneLoop UIv2"
+                    ? "Add a medication in OneLoop"
                     : "Great job for today",
                 reminderTime: .now,
                 completedCount: completedCount,

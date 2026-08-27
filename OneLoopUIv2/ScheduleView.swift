@@ -97,7 +97,7 @@ struct ScheduleView: View {
     private var pageHeader: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 7) {
-                Text("ONELOOP UIv2")
+                Text("ONELOOP")
                     .font(.caption.weight(.bold))
                     .tracking(1.6)
                     .foregroundStyle(AppTheme.teal)

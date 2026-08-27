@@ -36,9 +36,6 @@ struct AuthCardView: View {
                 Text("oneloop")
                     .font(.system(size: 28, weight: .light, design: .serif))
                     .tracking(3)
-                Text("uiv2")
-                    .font(.system(size: 13, weight: .medium, design: .serif))
-                    .tracking(3)
             }
             .foregroundStyle(AppTheme.navy)
             .frame(maxWidth: .infinity)

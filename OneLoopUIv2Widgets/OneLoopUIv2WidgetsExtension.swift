@@ -207,7 +207,7 @@ struct OneLoopUIv2WidgetEntryView: View {
 
     private var inlineWidgetText: String {
         if entry.medication.allMedicationsTaken {
-            return "OneLoop UIv2: all doses taken"
+            return "OneLoop: all doses taken"
         }
 
         let reminderTime = entry.medication.reminderTime.formatted(

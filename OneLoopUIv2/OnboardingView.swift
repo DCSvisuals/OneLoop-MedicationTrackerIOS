@@ -221,18 +221,11 @@ struct OnboardingView: View {
         ZStack {
             AppTheme.splashFill
 
-            VStack(spacing: 10) {
-                Text("ONELOOP")
-                    .font(.system(size: 42, weight: .light, design: .default))
-                    .tracking(6)
-                    .foregroundStyle(AppTheme.splashWordmark)
-
-                Text("UIv2")
-                    .font(.system(size: 16, weight: .medium, design: .default))
-                    .tracking(4)
-                    .foregroundStyle(AppTheme.splashWordmark.opacity(0.85))
-            }
-            .offset(y: 12)
+            Image("SplashLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 280)
+                .padding(.horizontal, 36)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
@@ -247,7 +240,7 @@ struct OnboardingView: View {
                 goToPage(.welcome)
             }
         }
-        .accessibilityLabel("OneLoop UIv2")
+        .accessibilityLabel("OneLoop")
         .accessibilityHint("Double tap to continue")
         .accessibilityAddTraits(.isButton)
     }
@@ -295,7 +288,7 @@ struct OnboardingView: View {
                     .multilineTextAlignment(.center)
 
                 Text(
-                    "Allow notifications so OneLoop UIv2 can remind you at every scheduled dose. Reminders stay on this iPhone."
+                    "Allow notifications so OneLoop can remind you at every scheduled dose. Reminders stay on this iPhone."
                 )
                 .font(.body)
                 .foregroundStyle(AppTheme.teal)
@@ -325,7 +318,7 @@ struct OnboardingView: View {
     private var notificationStatusBanner: some View {
         switch notificationStatus {
         case .authorized:
-            Text("Notifications are already allowed for OneLoop UIv2.")
+            Text("Notifications are already allowed for OneLoop.")
                 .font(.footnote)
                 .foregroundStyle(AppTheme.teal)
                 .padding(14)
@@ -336,7 +329,7 @@ struct OnboardingView: View {
                 )
         case .denied:
             Text(
-                "Notifications are turned off for OneLoop UIv2 in iOS Settings. " +
+                "Notifications are turned off for OneLoop in iOS Settings. " +
                 "You can enable them there, or continue and turn them on later."
             )
             .font(.footnote)
@@ -400,7 +393,7 @@ struct OnboardingView: View {
                         .font(.system(size: 34, weight: .bold, design: .serif))
                         .foregroundStyle(AppTheme.navy)
 
-                    Text("Please read carefully before using OneLoop UIv2.")
+                    Text("Please read carefully before using OneLoop.")
                         .font(.body)
                         .foregroundStyle(AppTheme.teal)
                 }
@@ -425,7 +418,7 @@ struct OnboardingView: View {
 
                 Toggle(isOn: $acceptedPolicy) {
                     Text(
-                        "I understand OneLoop UIv2 is a personal reminder tool, " +
+                        "I understand OneLoop is a personal reminder tool, " +
                         "not a medical device or source of medical advice, " +
                         "and that optional account data may be stored with Supabase."
                     )

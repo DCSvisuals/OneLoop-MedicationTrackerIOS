@@ -1,17 +1,17 @@
-# OneLoop UIv2 — App Store review checklist
+# OneLoop — App Store review checklist
 
 UI/UX is the current scope. Cloud/database work comes later. Use this against
 [App Store Review Guidelines](https://developer.apple.com/app-store/review/guidelines/).
 
 ## Guideline map (this app)
 
-| Guideline | How OneLoop UIv2 meets it |
+| Guideline | How OneLoop meets it |
 |---|---|
 | **1.4.1 Physical harm / medical** | Personal reminder only. Not a device, not diagnosis/treatment. First-launch disclaimer + Settings copy. No HealthKit, no sensor “measurements.” |
 | **1.5 Developer information** | In-app Support (email + URL) in Settings. Public support page. |
 | **1.6 / 5.1 Privacy** | In-app Privacy Policy + hosted URL. Local-first JSON. Cloud optional and called out in the disclaimer. |
 | **2.1 Completeness** | Core flow works without an account (**Skip**). No IAP. Reviewer can: Add med → Mark taken → History. |
-| **2.3 Metadata** | Name ≤ 30 chars (`OneLoop UIv2`). Screenshots must show the app in use (Today / Schedule / History), not only splash/login. |
+| **2.3 Metadata** | Name ≤ 30 chars (`OneLoop - Medication Tracker`). Homescreen label is `OneLoop`. Screenshots must show the app in use (Today / Schedule / History), not only splash/login. |
 | **2.3.5 Category** | Health & Fitness (reminder utility), not Medical. |
 | **2.3.6 Age rating** | Answer honestly; 4+ is typical. No “For Kids.” |
 | **2.5.1 Public APIs** | SwiftUI, UserNotifications, WidgetKit, App Groups. |

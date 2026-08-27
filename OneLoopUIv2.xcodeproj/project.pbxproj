@@ -276,7 +276,7 @@
 				DEVELOPMENT_TEAM = T3PT8TYVJ8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OneLoopUIv2Widgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "OneLoop UIv2";
+				INFOPLIST_KEY_CFBundleDisplayName = OneLoop;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 David Carranco. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -311,7 +311,7 @@
 				DEVELOPMENT_TEAM = T3PT8TYVJ8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OneLoopUIv2Widgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "OneLoop UIv2";
+				INFOPLIST_KEY_CFBundleDisplayName = OneLoop;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 David Carranco. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -464,7 +464,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "OneLoopUIv2/App-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "OneLoop UIv2";
+				INFOPLIST_KEY_CFBundleDisplayName = OneLoop;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 David Carranco. All rights reserved.";
@@ -514,7 +514,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "OneLoopUIv2/App-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "OneLoop UIv2";
+				INFOPLIST_KEY_CFBundleDisplayName = OneLoop;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 David Carranco. All rights reserved.";

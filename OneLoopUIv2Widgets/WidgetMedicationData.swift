@@ -18,7 +18,7 @@ struct WidgetMedicationData: Codable {
 
     static let empty = WidgetMedicationData(
         medicationName: "No medications",
-        dosage: "Add a medication in OneLoop UIv2",
+        dosage: "Add a medication in OneLoop",
         reminderTime: .now,
         completedCount: 0,
         totalCount: 0,

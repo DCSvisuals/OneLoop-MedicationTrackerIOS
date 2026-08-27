@@ -116,7 +116,7 @@ final class SupabaseManager {
                 redirectTo: SupabaseConfig.authRedirectURL
             )
             lastStatusMessage =
-                "Check your email for a sign-in link, then return to OneLoop UIv2."
+                "Check your email for a sign-in link, then return to OneLoop."
         } catch {
             lastErrorMessage = error.localizedDescription
         }

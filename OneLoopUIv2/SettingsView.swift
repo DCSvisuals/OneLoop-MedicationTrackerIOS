@@ -131,7 +131,7 @@ struct SettingsView: View {
             if notificationStatus == .denied {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(
-                        "Notifications are turned off for OneLoop UIv2 in " +
+                        "Notifications are turned off for OneLoop in " +
                         "iOS Settings. Enable them to receive dose reminders."
                     )
                     .font(.caption)
@@ -157,7 +157,7 @@ struct SettingsView: View {
             if showOpenSettingsHint {
                 Text(
                     "Permission was not granted. Use Open Settings to allow " +
-                    "notifications for OneLoop UIv2."
+                    "notifications for OneLoop."
                 )
                 .font(.caption)
                 .foregroundStyle(AppTheme.warning)
@@ -181,7 +181,7 @@ struct SettingsView: View {
 
             Text(
                 useSystemAppearance
-                    ? "OneLoop UIv2 follows your device appearance setting."
+                    ? "OneLoop follows your device appearance setting."
                     : (
                         useDarkMode
                             ? "Dark mode is enabled."

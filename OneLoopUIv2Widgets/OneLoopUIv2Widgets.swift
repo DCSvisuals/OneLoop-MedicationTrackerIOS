@@ -71,7 +71,7 @@ struct OneLoopUIv2MedicationWidget: Widget {
         ) { entry in
             OneLoopUIv2WidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("OneLoop UIv2")
+        .configurationDisplayName("OneLoop")
         .description(
             "View your next medication and today's progress."
         )

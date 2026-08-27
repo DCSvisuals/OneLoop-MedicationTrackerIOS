@@ -1,8 +1,8 @@
-# OneLoop UIv2 — Medication Tracker (iOS)
+# OneLoop - Medication Tracker (iOS)
 
-OneLoop UIv2 is a personal iOS medication reminder and schedule app built with **SwiftUI**.
+OneLoop is a personal iOS medication reminder and schedule app built with **SwiftUI**.
 
-> **Disclaimer:** OneLoop UIv2 is a personal organization tool. It is **not** a medical device and does not provide medical advice, diagnosis, or treatment.
+> **Disclaimer:** OneLoop is a personal organization tool. It is **not** a medical device and does not provide medical advice, diagnosis, or treatment.
 
 This repository’s **main** branch is the UIv2 redesign. The previous app is kept on the **`legacy-v1`** branch.
 
