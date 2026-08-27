@@ -20,9 +20,9 @@ enum SupabaseConfig {
     /// `oneloopuiv2://auth-callback…` so ASWebAuthenticationSession can close.
     ///
     /// Deploy `docs/auth-callback/index.html` to:
-    /// https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/auth-callback/
+    /// https://dcsvisuals.github.io/OneLoop/auth-callback/
     static let authRedirectURL = URL(
-        string: "https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/auth-callback/"
+        string: "https://dcsvisuals.github.io/OneLoop/auth-callback/"
     )!
 
     /// Custom URL scheme registered in App-Info.plist.

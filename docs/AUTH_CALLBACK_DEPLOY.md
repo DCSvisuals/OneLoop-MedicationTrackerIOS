@@ -14,7 +14,7 @@ the auth tokens and never left the carousel.
 Copy `docs/auth-callback/index.html` into your **privacy/support GitHub Pages repo** so it is live at:
 
 ```text
-https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/auth-callback/
+https://dcsvisuals.github.io/OneLoop/auth-callback/
 ```
 
 (or `/auth-callback/index.html` — both work with GitHub Pages)
@@ -24,13 +24,13 @@ https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/auth-callba
 **Site URL** (recommended):
 
 ```text
-https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/auth-callback/
+https://dcsvisuals.github.io/OneLoop/auth-callback/
 ```
 
 **Redirect URLs** (add all of these):
 
 ```text
-https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/auth-callback/
+https://dcsvisuals.github.io/OneLoop/auth-callback/
 https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/**
 oneloop://auth-callback
 oneloop://**

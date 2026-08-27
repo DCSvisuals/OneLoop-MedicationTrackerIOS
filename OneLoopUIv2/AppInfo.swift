@@ -34,7 +34,7 @@ enum AppInfo {
     )
 
     static let supportURL = URL(
-        string: "https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/support/"
+        string: "https://dcsvisuals.github.io/OneLoop/support/"
     )
 
     // MARK: - Medical disclaimer
