@@ -25,12 +25,12 @@ enum AppInfo {
 
     /// Public site (GitHub Pages).
     static let homeURL = URL(
-        string: "https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/"
+        string: "https://dcsvisuals.github.io/OneLoop/home/"
     )
 
     /// Hosted privacy policy URL for App Store Connect and in-app links.
     static let privacyPolicyURL = URL(
-        string: "https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/privacy/"
+        string: "https://dcsvisuals.github.io/OneLoop/PrivacyPolicy/"
     )
 
     static let supportURL = URL(

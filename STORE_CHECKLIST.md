@@ -26,7 +26,7 @@ UI/UX is the current scope. Cloud/database work comes later. Use this against
 ## Before upload
 
 1. **Public legal/support pages**  
-   - Home: https://dcsvisuals.github.io/OneLoop-MedicationTracker-PrivacyPolicy/  
+   - Home: https://dcsvisuals.github.io/OneLoop/home/  
    - Privacy: `…/privacy/`  
    - Support: `…/support/`  
    - Wired in `AppInfo.swift`  
