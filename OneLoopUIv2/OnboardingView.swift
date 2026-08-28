@@ -224,8 +224,7 @@ struct OnboardingView: View {
             Image("SplashLogo")
                 .resizable()
                 .scaledToFit()
-                .frame(maxWidth: 280)
-                .padding(.horizontal, 36)
+                .frame(width: 220, height: 220)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
