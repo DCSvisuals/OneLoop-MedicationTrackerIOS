@@ -29,6 +29,7 @@ struct AuthCardView: View {
     @State private var showPassword = false
     @State private var rememberMe = true
     @State private var acceptedTerms = false
+    @State private var acceptedHealthData = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -128,6 +129,18 @@ struct AuthCardView: View {
                     }
                     .toggleStyle(AuthCheckboxToggleStyle())
                     .tint(AppTheme.blue)
+
+                    Toggle(isOn: $acceptedHealthData) {
+                        Text(
+                            "I consent to OneLoop processing my medication names and schedules as health-related data for optional encrypted cloud backup (GDPR). I can use the app without an account."
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.navy)
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .toggleStyle(AuthCheckboxToggleStyle())
+                    .tint(AppTheme.blue)
+                    .accessibilityLabel("Consent to processing health-related data")
                 }
 
                 Button {
@@ -194,7 +207,7 @@ struct AuthCardView: View {
                         socialCircle(
                             systemImage: "g.circle.fill",
                             label: "Google",
-                            enabled: true
+                            enabled: mode == .login || (acceptedTerms && acceptedHealthData)
                         ) {
                             Task { await signInWithGoogle() }
                         }
@@ -263,7 +276,7 @@ struct AuthCardView: View {
 
     private var canSubmit: Bool {
         guard !trimmedEmail.isEmpty, password.count >= 6 else { return false }
-        if mode == .register { return acceptedTerms }
+        if mode == .register { return acceptedTerms && acceptedHealthData }
         return true
     }
 
@@ -283,6 +296,12 @@ struct AuthCardView: View {
                 cloud.lastErrorMessage = "Please agree to the Terms of Service."
                 return
             }
+            guard acceptedHealthData else {
+                cloud.lastErrorMessage =
+                    "Please consent to processing health-related data to create an account."
+                return
+            }
+            HealthDataConsent.isGranted = true
             await cloud.signUpWithEmailPassword(
                 email: trimmedEmail,
                 password: password,
@@ -296,6 +315,14 @@ struct AuthCardView: View {
     }
 
     private func signInWithGoogle() async {
+        if mode == .register {
+            guard acceptedTerms, acceptedHealthData else {
+                cloud.lastErrorMessage =
+                    "To create an account with Google, agree to the Terms of Service and consent to health-data processing."
+                return
+            }
+            HealthDataConsent.isGranted = true
+        }
         await cloud.signInWithGoogle()
         if cloud.isSignedIn {
             onAuthenticated?()

@@ -163,10 +163,14 @@ final class SupabaseManager {
         do {
             let trimmedName = fullName?
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            let metadata: [String: AnyJSON]? = {
-                guard let trimmedName, !trimmedName.isEmpty else { return nil }
-                return ["full_name": .string(trimmedName)]
-            }()
+            let timestamp = ISO8601DateFormatter().string(from: Date())
+            var metadata: [String: AnyJSON] = [
+                "health_data_consent": .bool(true),
+                "health_data_consent_at": .string(timestamp),
+            ]
+            if let trimmedName, !trimmedName.isEmpty {
+                metadata["full_name"] = .string(trimmedName)
+            }
 
             let response = try await client.auth.signUp(
                 email: email.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -565,7 +569,10 @@ struct MedicationRemoteRow: Codable, Sendable {
 
         id = medication.id
         user_id = userID
-        name = medication.name
+        name = MedicationNameCipher.shared.encryptForAccount(
+            medication.name,
+            userId: userID
+        )
         start_date = dayFormatter.string(from: medication.startDate)
         doses_per_day = medication.dosesPerDay
         dose_amount = medication.doseAmount
@@ -603,7 +610,7 @@ struct MedicationRemoteRow: Codable, Sendable {
 
         return Medication(
             id: id,
-            name: name,
+            name: MedicationNameCipher.shared.decryptForAccount(name, userId: user_id),
             startDate: start,
             dosesPerDay: doses_per_day,
             doseAmount: dose_amount,

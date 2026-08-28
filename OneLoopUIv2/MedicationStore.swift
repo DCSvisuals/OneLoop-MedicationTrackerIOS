@@ -787,7 +787,11 @@ final class MedicationStore {
             medications = try decoder.decode(
                 [Medication].self,
                 from: data
-            )
+            ).map { medication in
+                var copy = medication
+                copy.name = MedicationNameCipher.shared.decryptLocal(medication.name)
+                return copy
+            }
 
             sortMedications()
         } catch {
@@ -816,11 +820,16 @@ final class MedicationStore {
                 .sortedKeys
             ]
 
-            let data = try encoder.encode(medications)
+            let sealed = medications.map { medication -> Medication in
+                var copy = medication
+                copy.name = MedicationNameCipher.shared.encryptLocal(medication.name)
+                return copy
+            }
+            let data = try encoder.encode(sealed)
 
             try data.write(
                 to: url,
-                options: [.atomic]
+                options: [.atomic, .completeFileProtection]
             )
         } catch {
             print(
@@ -852,7 +861,11 @@ final class MedicationStore {
             historyEntries = try decoder.decode(
                 [MedicationHistoryEntry].self,
                 from: data
-            )
+            ).map { entry in
+                var copy = entry
+                copy.name = MedicationNameCipher.shared.decryptLocal(entry.name)
+                return copy
+            }
         } catch {
             print(
                 "Could not load medication history: " +
@@ -875,11 +888,16 @@ final class MedicationStore {
                 .sortedKeys
             ]
 
-            let data = try encoder.encode(historyEntries)
+            let sealed = historyEntries.map { entry -> MedicationHistoryEntry in
+                var copy = entry
+                copy.name = MedicationNameCipher.shared.encryptLocal(entry.name)
+                return copy
+            }
+            let data = try encoder.encode(sealed)
 
             try data.write(
                 to: url,
-                options: [.atomic]
+                options: [.atomic, .completeFileProtection]
             )
         } catch {
             print(
